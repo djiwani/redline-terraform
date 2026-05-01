@@ -41,3 +41,28 @@ variable "public_subnet_cidrs" {
 variable "private_subnet_cidrs" {
   default = ["10.5.10.0/24", "10.5.11.0/24"]
 }
+
+variable "notification_email" {
+  description = "Email for deal reached / negotiation failed notifications"
+  default     = "djiwani05@gmail.com"
+}
+
+variable "owner_email" {
+  description = "Email for owner operational alerts"
+  default     = "djiwani05@gmail.com"
+}
+
+# These are set after the AWS Load Balancer Controller
+# creates the ALB via Kubernetes Ingress deployment.
+# Run terraform apply a second time after Helm deploy.
+variable "alb_dns_name" {
+  description = "ALB DNS name — from AWS Load Balancer Controller"
+  type        = string
+  default     = ""
+}
+
+variable "alb_hosted_zone_id" {
+  description = "ALB hosted zone ID for Route53 alias"
+  type        = string
+  default     = "Z35SXDOTRQ7X7K" # us-east-1 ALB hosted zone ID — always this value
+}
