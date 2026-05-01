@@ -21,11 +21,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "jiwani-terraform-state"
-    key            = "redline/dev/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "terraform-state-lock"
-    encrypt        = true
+    bucket       = "jiwani-terraform-state"
+    key          = "redline/dev/terraform.tfstate"
+    region       = "us-east-1"
+    use_lockfile = true
+    encrypt      = true
   }
 }
 
