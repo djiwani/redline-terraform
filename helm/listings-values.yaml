@@ -1,0 +1,40 @@
+name: listings-service
+namespace: redline
+replicas: 1
+containerPort: 8000
+
+image:
+  repository: 856888988892.dkr.ecr.us-east-1.amazonaws.com/redline/listings-service
+  tag: latest
+
+# IRSA role ARN from terraform output
+irsaRoleArn: "arn:aws:iam::856888988892:role/redline-listings-service"
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+env:
+  - name: DB_SECRET_NAME
+    value: "redline/db-credentials"
+  - name: AWS_REGION
+    value: "us-east-1"
+  - name: PORT
+    value: "8000"
+
+ingress:
+  host: "api.redline.fourallthedogs.com"
+  pathPrefix: "listings"
+  # ACM certificate ARN — get this from AWS console after cert validates
+  # aws acm list-certificates --region us-east-1 --profile dev
+  certificateArn: "arn:aws:acm:us-east-1:856888988892:certificate/4ccdaafe-99dc-4fba-a649-9eb4d1afbadb"
+  # Public subnet IDs from networking module
+  # aws ec2 describe-subnets --filters "Name=tag:Tier,Values=public" --profile dev
+  publicSubnets: "subnet-05eeda64f9e8a3630,subnet-05281e2fc3d46d4d2"
+  # WAF ACL ARN for the API ALB
+  # aws wafv2 list-web-acls --scope REGIONAL --region us-east-1 --profile dev
+  wafAclArn: ""

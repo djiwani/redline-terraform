@@ -20,12 +20,11 @@ terraform {
     }
   }
 
-  backend "s3" {
-    bucket       = "jiwani-terraform-state"
-    key          = "redline/dev/terraform.tfstate"
-    region       = "us-east-1"
-    use_lockfile = true
-    encrypt      = true
+  # Local backend — state file lives on your machine
+  # Simple and reliable for a solo portfolio project
+  # terraform.tfstate is gitignored so it never gets committed
+  backend "local" {
+    path = "terraform.tfstate"
   }
 }
 

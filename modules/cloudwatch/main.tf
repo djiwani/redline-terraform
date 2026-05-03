@@ -47,8 +47,12 @@ resource "aws_cloudwatch_log_group" "negotiation_service" {
 
 # -------------------------------------------------------
 # ALB ALARMS
+# Only created after ALB exists (after Helm deploy).
+# Same pattern as Route53 API record.
 # -------------------------------------------------------
 resource "aws_cloudwatch_metric_alarm" "alb_5xx_errors" {
+  count = var.alb_arn_suffix != "" ? 1 : 0
+
   alarm_name          = "${var.project}-alb-5xx-errors"
   alarm_description   = "ALB returning too many 5xx errors"
   comparison_operator = "GreaterThanThreshold"
@@ -73,6 +77,8 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx_errors" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "alb_unhealthy_targets" {
+  count = var.alb_arn_suffix != "" ? 1 : 0
+
   alarm_name          = "${var.project}-alb-unhealthy-targets"
   alarm_description   = "ALB has unhealthy targets"
   comparison_operator = "GreaterThanThreshold"
@@ -146,10 +152,10 @@ resource "aws_cloudwatch_metric_alarm" "rds_connections_high" {
 
 # -------------------------------------------------------
 # NEGOTIATION SERVICE ALARM
-# Fires if negotiation-service errors spike —
-# likely means Bedrock calls are failing
 # -------------------------------------------------------
 resource "aws_cloudwatch_metric_alarm" "negotiation_errors" {
+  count = var.alb_arn_suffix != "" ? 1 : 0
+
   alarm_name          = "${var.project}-negotiation-errors"
   alarm_description   = "Negotiation service error rate is high — check Bedrock calls"
   comparison_operator = "GreaterThanThreshold"
@@ -174,89 +180,92 @@ resource "aws_cloudwatch_metric_alarm" "negotiation_errors" {
 
 # -------------------------------------------------------
 # CLOUDWATCH DASHBOARD
-# Single pane of glass for the whole system.
-# Shows ALB traffic, RDS metrics, and pod logs.
+# ALB widgets only added after ALB exists.
+# RDS and DynamoDB widgets always present.
 # -------------------------------------------------------
 resource "aws_cloudwatch_dashboard" "main" {
   dashboard_name = "${var.project}-dashboard"
 
   dashboard_body = jsonencode({
-    widgets = [
-      # ALB Request Volume
-      {
-        type   = "metric"
-        x      = 0
-        y      = 0
-        width  = 12
-        height = 6
-        properties = {
-          title  = "API Request Volume (ALB)"
-          region = var.region
-          view   = "timeSeries"
-          metrics = [
-            ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", var.alb_arn_suffix]
-          ]
-          period = 60
-          stat   = "Sum"
+    widgets = concat(
+      # RDS CPU + Connections — always present
+      [
+        {
+          type   = "metric"
+          x      = 0
+          y      = 0
+          width  = 12
+          height = 6
+          properties = {
+            title  = "RDS — CPU / Connections"
+            region = var.region
+            view   = "timeSeries"
+            metrics = [
+              ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", var.db_instance_identifier],
+              [".", "DatabaseConnections", ".", "."]
+            ]
+            period = 60
+            stat   = "Average"
+          }
+        },
+        # DynamoDB — always present
+        {
+          type   = "metric"
+          x      = 12
+          y      = 0
+          width  = 12
+          height = 6
+          properties = {
+            title  = "DynamoDB — Negotiation Sessions"
+            region = var.region
+            view   = "timeSeries"
+            metrics = [
+              ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", var.dynamodb_table_name, "Operation", "PutItem"],
+              [".", ".", ".", ".", "Operation", "Query"]
+            ]
+            period = 60
+            stat   = "Average"
+          }
         }
-      },
-      # ALB Error Rates
-      {
-        type   = "metric"
-        x      = 12
-        y      = 0
-        width  = 12
-        height = 6
-        properties = {
-          title  = "API Errors (4xx / 5xx)"
-          region = var.region
-          view   = "timeSeries"
-          metrics = [
-            ["AWS/ApplicationELB", "HTTPCode_Target_4XX_Count", "LoadBalancer", var.alb_arn_suffix, { label = "4xx" }],
-            [".", "HTTPCode_Target_5XX_Count", ".", ".", { label = "5xx" }]
-          ]
-          period = 60
-          stat   = "Sum"
+      ],
+      # ALB widgets — only added after ALB exists
+      var.alb_arn_suffix != "" ? [
+        {
+          type   = "metric"
+          x      = 0
+          y      = 6
+          width  = 12
+          height = 6
+          properties = {
+            title  = "API Request Volume (ALB)"
+            region = var.region
+            view   = "timeSeries"
+            metrics = [
+              ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", var.alb_arn_suffix]
+            ]
+            period = 60
+            stat   = "Sum"
+          }
+        },
+        {
+          type   = "metric"
+          x      = 12
+          y      = 6
+          width  = 12
+          height = 6
+          properties = {
+            title  = "API Errors (4xx / 5xx)"
+            region = var.region
+            view   = "timeSeries"
+            metrics = [
+              ["AWS/ApplicationELB", "HTTPCode_Target_4XX_Count", "LoadBalancer", var.alb_arn_suffix],
+              [".", "HTTPCode_Target_5XX_Count", ".", "."]
+            ]
+            period = 60
+            stat   = "Sum"
+          }
         }
-      },
-      # RDS CPU + Connections
-      {
-        type   = "metric"
-        x      = 0
-        y      = 6
-        width  = 12
-        height = 6
-        properties = {
-          title  = "RDS — CPU / Connections"
-          region = var.region
-          view   = "timeSeries"
-          metrics = [
-            ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", var.db_instance_identifier, { label = "CPU %" }],
-            [".", "DatabaseConnections", ".", ".", { label = "Connections", yAxis = "right" }]
-          ]
-          period = 60
-          stat   = "Average"
-        }
-      },
-      # DynamoDB requests
-      {
-        type   = "metric"
-        x      = 12
-        y      = 6
-        width  = 12
-        height = 6
-        properties = {
-          title  = "DynamoDB — Negotiation Sessions"
-          region = var.region
-          view   = "timeSeries"
-          metrics = [
-            ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", var.dynamodb_table_name, "Operation", "PutItem", { label = "PutItem latency" }],
-            [".", ".", ".", ".", "Operation", "Query", { label = "Query latency" }]
-          ]
-          period = 60
-          stat   = "Average"
-        }
-      }
-    ]
+      ] : []
+    )
   })
 }

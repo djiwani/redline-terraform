@@ -33,11 +33,12 @@ resource "aws_route53_record" "frontend" {
 # -------------------------------------------------------
 # API RECORD
 # api.redline.fourallthedogs.com -> ALB
-# The ALB is created by the AWS Load Balancer Controller
-# when you deploy your Kubernetes Ingress resources.
-# This record will be created after the ALB exists.
+# Only created after the ALB exists (after Helm deploy).
+# Set alb_dns_name variable then run terraform apply again.
 # -------------------------------------------------------
 resource "aws_route53_record" "api" {
+  count = var.alb_dns_name != "" ? 1 : 0
+
   zone_id = aws_route53_zone.main.zone_id
   name    = "api.${var.subdomain}"
   type    = "A"

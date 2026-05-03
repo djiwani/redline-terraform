@@ -1,0 +1,45 @@
+name: negotiation-service
+namespace: redline
+replicas: 1
+containerPort: 8000
+
+image:
+  repository: 856888988892.dkr.ecr.us-east-1.amazonaws.com/redline/negotiation-service
+  tag: latest
+
+# IRSA role ARN from terraform output
+irsaRoleArn: "arn:aws:iam::856888988892:role/redline-negotiation-service"
+
+resources:
+  # Negotiation service needs more resources — makes multiple Bedrock calls per round
+  requests:
+    cpu: "200m"
+    memory: "256Mi"
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
+
+env:
+  - name: DB_SECRET_NAME
+    value: "redline/db-credentials"
+  - name: AWS_REGION
+    value: "us-east-1"
+  - name: PORT
+    value: "8000"
+  - name: DYNAMODB_TABLE
+    value: "redline-negotiation-sessions"
+  - name: SNS_DEAL_REACHED_ARN
+    value: "arn:aws:sns:us-east-1:856888988892:redline-deal-reached"
+  - name: SNS_NEGOTIATION_FAILED_ARN
+    value: "arn:aws:sns:us-east-1:856888988892:redline-negotiation-failed"
+  - name: BEDROCK_MODEL_ID
+    value: "anthropic.claude-haiku-4-5"
+  - name: MAX_ROUNDS
+    value: "10"
+
+ingress:
+  host: "api.redline.fourallthedogs.com"
+  pathPrefix: "negotiate"
+  certificateArn: "arn:aws:acm:us-east-1:856888988892:certificate/4ccdaafe-99dc-4fba-a649-9eb4d1afbadb"
+  publicSubnets: "subnet-05eeda64f9e8a3630,subnet-05281e2fc3d46d4d2"
+  wafAclArn: ""

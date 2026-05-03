@@ -1,0 +1,40 @@
+name: users-service
+namespace: redline
+replicas: 1
+containerPort: 8000
+
+image:
+  repository: 856888988892.dkr.ecr.us-east-1.amazonaws.com/redline/users-service
+  tag: latest
+
+# IRSA role ARN from terraform output
+irsaRoleArn: "arn:aws:iam::856888988892:role/redline-users-service"
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+env:
+  - name: DB_SECRET_NAME
+    value: "redline/db-credentials"
+  - name: AWS_REGION
+    value: "us-east-1"
+  - name: PORT
+    value: "8000"
+  - name: COGNITO_USER_POOL_ID
+    value: "us-east-1_fGQUmd0nR"
+  - name: COGNITO_CLIENT_ID
+    value: "70jt4r4pe5kuehheombbrrkblu"
+  - name: COGNITO_REGION
+    value: "us-east-1"
+
+ingress:
+  host: "api.redline.fourallthedogs.com"
+  pathPrefix: "users"
+  certificateArn: "arn:aws:acm:us-east-1:856888988892:certificate/4ccdaafe-99dc-4fba-a649-9eb4d1afbadb"
+  publicSubnets: "subnet-05eeda64f9e8a3630,subnet-05281e2fc3d46d4d2"
+  wafAclArn: ""
