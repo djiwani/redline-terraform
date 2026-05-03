@@ -17,3 +17,8 @@ output "s3_bucket_name" {
   description = "Frontend S3 bucket name — used by GitHub Actions to sync build files"
   value       = aws_s3_bucket.frontend.bucket
 }
+
+output "acm_certificate_arn" {
+  description = "Wildcard ACM cert ARN — used by both CloudFront and ALB ingress"
+  value       = aws_acm_certificate_validation.frontend.certificate_arn
+}

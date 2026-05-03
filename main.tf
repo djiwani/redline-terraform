@@ -145,6 +145,7 @@ module "irsa" {
 
   project                    = var.project
   region                     = var.region
+  account_id                 = "856888988892"
   oidc_provider_arn          = module.eks.oidc_provider_arn
   oidc_issuer_url            = module.eks.cluster_oidc_issuer
   db_secret_arn              = module.rds.db_secret_arn

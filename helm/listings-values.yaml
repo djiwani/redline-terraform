@@ -31,7 +31,7 @@ ingress:
   pathPrefix: "listings"
   # ACM certificate ARN — get this from AWS console after cert validates
   # aws acm list-certificates --region us-east-1 --profile dev
-  certificateArn: "arn:aws:acm:us-east-1:856888988892:certificate/4ccdaafe-99dc-4fba-a649-9eb4d1afbadb"
+  certificateArn: "arn:aws:acm:us-east-1:856888988892:certificate/483e39fa-cee8-47af-a3f4-1d7bacc95206"
   # Public subnet IDs from networking module
   # aws ec2 describe-subnets --filters "Name=tag:Tier,Values=public" --profile dev
   publicSubnets: "subnet-05eeda64f9e8a3630,subnet-05281e2fc3d46d4d2"

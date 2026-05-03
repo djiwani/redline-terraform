@@ -89,3 +89,8 @@ output "users_service_role_arn" {
   description = "IRSA role ARN for users-service — used in Helm values"
   value       = module.irsa.users_service_role_arn
 }
+
+output "acm_certificate_arn" {
+  description = "Wildcard ACM certificate ARN"
+  value       = module.cloudfront.acm_certificate_arn
+}

@@ -43,3 +43,8 @@ variable "sns_negotiation_failed_arn" {
   description = "SNS topic ARN for negotiation failed notifications"
   type        = string
 }
+
+variable "account_id" {
+  description = "AWS account ID"
+  type        = string
+}

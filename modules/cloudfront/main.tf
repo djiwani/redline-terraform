@@ -81,9 +81,10 @@ resource "aws_s3_bucket_policy" "frontend" {
 # Uses the us_east_1 provider alias from root main.tf.
 # -------------------------------------------------------
 resource "aws_acm_certificate" "frontend" {
-  provider          = aws.us_east_1
-  domain_name       = var.subdomain
-  validation_method = "DNS"
+  provider                  = aws.us_east_1
+  domain_name               = var.subdomain
+  subject_alternative_names = ["*.${var.subdomain}"]
+  validation_method         = "DNS"
 
   lifecycle {
     create_before_destroy = true

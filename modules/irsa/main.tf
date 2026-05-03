@@ -105,10 +105,13 @@ resource "aws_iam_role_policy" "negotiation_service" {
     Statement = [
       # Bedrock — invoke Claude Haiku only, not all models
       {
-        Effect = "Allow"
-        Action = ["bedrock:InvokeModel"]
-        Resource = "arn:aws:bedrock:${var.region}::foundation-model/anthropic.claude-haiku-4-5"
-      },
+		  Effect = "Allow"
+		  Action = ["bedrock:InvokeModel"]
+		  Resource = [
+			"arn:aws:bedrock:${var.region}:${var.account_id}:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0",
+			"arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
+		  ]
+		},
       # DynamoDB — negotiation session table only
       {
         Effect = "Allow"
