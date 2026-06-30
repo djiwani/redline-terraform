@@ -52,3 +52,8 @@ variable "eks_nodes_sg_id" {
   description = "Security group ID for EKS nodes"
   type        = string
 }
+
+variable "rds_sg_id" {
+  description = "RDS security group ID — EKS cluster managed SG will be granted port 5432 access after cluster creation"
+  type        = string
+}

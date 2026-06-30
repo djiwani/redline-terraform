@@ -220,10 +220,13 @@ resource "aws_security_group" "eks_nodes" {
   }
 }
 
-# RDS — accepts traffic from EKS nodes only
+# RDS — accepts traffic from EKS nodes custom SG only.
+# The EKS cluster managed SG rule is added separately in
+# the EKS module (modules/eks/main.tf) after the cluster
+# exists, to avoid a circular dependency.
 resource "aws_security_group" "rds" {
   name        = "${var.project}-rds-sg"
-  description = "RDS security group - accepts traffic from EKS nodes only"
+  description = "RDS security group - accepts PostgreSQL from EKS nodes"
   vpc_id      = aws_vpc.main.id
 
   ingress {
@@ -232,14 +235,6 @@ resource "aws_security_group" "rds" {
     to_port         = 5432
     protocol        = "tcp"
     security_groups = [aws_security_group.eks_nodes.id]
-  }
-
-  ingress {
-    description = "PostgreSQL from EKS cluster managed SG"
-    from_port   = 5432
-    to_port     = 5432
-    protocol    = "tcp"
-    security_groups = ["sg-0d5707830ab9c2820"]
   }
 
   egress {

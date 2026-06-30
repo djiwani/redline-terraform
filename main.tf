@@ -20,11 +20,16 @@ terraform {
     }
   }
 
-  # Local backend — state file lives on your machine
-  # Simple and reliable for a solo portfolio project
-  # terraform.tfstate is gitignored so it never gets committed
-  backend "local" {
-    path = "terraform.tfstate"
+  # Remote backend — state stored in S3, locking via DynamoDB
+  # Prevents state corruption if multiple applies run concurrently
+  # and ensures state is never lost if the local machine dies
+  backend "s3" {
+    bucket         = "redline-terraform-state"
+    key            = "redline/terraform.tfstate"
+    region         = "us-east-1"
+    profile        = "dev"
+    dynamodb_table = "redline-terraform-locks"
+    encrypt        = true
   }
 }
 
@@ -55,6 +60,13 @@ provider "helm" {
 }
 
 # -------------------------------------------------------
+# ACCOUNT ID
+# Pulled dynamically so it is never hardcoded anywhere.
+# Referenced by the IRSA module.
+# -------------------------------------------------------
+data "aws_caller_identity" "current" {}
+
+# -------------------------------------------------------
 # NETWORKING
 # Everything else depends on this — run first.
 # -------------------------------------------------------
@@ -72,6 +84,9 @@ module "networking" {
 # EKS
 # Cluster, node group, and OIDC provider for IRSA.
 # Takes ~15 minutes to provision.
+# rds_sg_id passed in so the EKS cluster managed SG can
+# be granted RDS access after the cluster exists, avoiding
+# a circular dependency with the networking module.
 # -------------------------------------------------------
 module "eks" {
   source = "./modules/eks"
@@ -81,6 +96,7 @@ module "eks" {
   public_subnet_ids  = module.networking.public_subnet_ids
   private_subnet_ids = module.networking.private_subnet_ids
   eks_nodes_sg_id    = module.networking.eks_nodes_sg_id
+  rds_sg_id          = module.networking.rds_sg_id
 }
 
 # -------------------------------------------------------
@@ -139,13 +155,15 @@ module "cognito" {
 # IRSA
 # IAM roles for pods — depends on RDS, DynamoDB, SNS
 # so those must exist first to get their ARNs.
+# account_id pulled from aws_caller_identity data source
+# rather than hardcoded.
 # -------------------------------------------------------
 module "irsa" {
   source = "./modules/irsa"
 
   project                    = var.project
   region                     = var.region
-  account_id                 = "856888988892"
+  account_id                 = data.aws_caller_identity.current.account_id
   oidc_provider_arn          = module.eks.oidc_provider_arn
   oidc_issuer_url            = module.eks.cluster_oidc_issuer
   db_secret_arn              = module.rds.db_secret_arn

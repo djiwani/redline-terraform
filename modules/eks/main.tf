@@ -158,3 +158,22 @@ resource "aws_iam_openid_connect_provider" "cluster" {
     Project = var.project
   }
 }
+
+# -------------------------------------------------------
+# RDS CLUSTER SG RULE
+# Grants the EKS cluster managed SG access to RDS on 5432.
+# Done here rather than in the networking module because the
+# cluster managed SG doesn't exist until after the EKS cluster
+# is created — putting it in networking would create a circular
+# dependency. This resource runs after the cluster exists and
+# adds the rule dynamically.
+# -------------------------------------------------------
+resource "aws_security_group_rule" "eks_cluster_to_rds" {
+  type                     = "ingress"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  security_group_id        = var.rds_sg_id
+  source_security_group_id = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
+  description              = "EKS cluster managed SG to RDS PostgreSQL"
+}

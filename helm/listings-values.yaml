@@ -29,12 +29,6 @@ env:
 ingress:
   host: "api.redline.fourallthedogs.com"
   pathPrefix: "listings"
-  # ACM certificate ARN — get this from AWS console after cert validates
-  # aws acm list-certificates --region us-east-1 --profile dev
-  certificateArn: "arn:aws:acm:us-east-1:856888988892:certificate/483e39fa-cee8-47af-a3f4-1d7bacc95206"
-  # Public subnet IDs from networking module
-  # aws ec2 describe-subnets --filters "Name=tag:Tier,Values=public" --profile dev
-  publicSubnets: "subnet-05eeda64f9e8a3630,subnet-05281e2fc3d46d4d2"
-  # WAF ACL ARN for the API ALB
-  # aws wafv2 list-web-acls --scope REGIONAL --region us-east-1 --profile dev
+  certificateArn: "arn:aws:acm:us-east-1:856888988892:certificate/9f63e8e5-4d74-484e-bc37-5754d5628541"
+  publicSubnets: "subnet-09108fc1cd192d465,subnet-036e3bb938bfbb308"
   wafAclArn: ""
